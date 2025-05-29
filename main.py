@@ -79,8 +79,8 @@ def main():
                     break
             
             # Draw environment only every FRAME_SKIP frames
-            if step % FRAME_SKIP == 0:
-                visualizer.draw_environment(env, animats)
+            # if step % FRAME_SKIP == 0:
+            visualizer.draw_environment(env, animats)
         
         generation += 1
     

@@ -19,7 +19,7 @@ class GeneticAlgorithm:
     
     def select_parent(self):
         """Select a parent using tournament selection"""
-        tournament_size = 3
+        tournament_size = 7
         tournament = random.sample(self.population, tournament_size)
         return max(tournament, key=lambda x: self.evaluate_fitness(x))
     
@@ -70,9 +70,10 @@ class GeneticAlgorithm:
         # Create new population
         new_population = []
         
-        # Elitism: keep the best individual
-        best_idx = np.argmax(fitnesses)
-        new_population.append(self.population[best_idx])
+        # Elitism: keep the best 5 individuals
+        elite_indices = np.argsort(fitnesses)[-5:]
+        for idx in elite_indices:
+            new_population.append(self.population[idx])
         
         # Create rest of new population
         while len(new_population) < POPULATION_SIZE:
