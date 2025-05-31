@@ -29,7 +29,7 @@ This project simulates the behavior-selection and evolution of minimalist animat
 - **Behavior:**
   - Sensor signals are transformed into wheel speeds via a set of genetically-encoded transfer functions (sensorimotor links).
   - The animat moves according to the difference in wheel speeds.
-  - If stuck (not moving for 30 steps), the animat will reorient toward the nearest food or water source.
+  - If stuck (not moving for 30 steps), the animat will reorient randomly.
   - If two animats collide, both lose battery.
 
 ## Genetic Algorithm
@@ -77,4 +77,4 @@ This project simulates the behavior-selection and evolution of minimalist animat
 - Modify the animat's sensorimotor logic or genetic encoding for experiments.
 
 ## License
-MIT License (or specify your own). 
+MIT License. 
