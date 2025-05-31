@@ -105,7 +105,17 @@ class Visualizer:
             trajectory.append(animat.position)
         
         trajectory = np.array(trajectory)
-        plt.plot(trajectory[:, 0], trajectory[:, 1], 'b-', alpha=0.5)
+        
+        # Plot food, water, and trap objects
+        food_x, food_y = zip(*env.food_sources) if env.food_sources else ([], [])
+        water_x, water_y = zip(*env.water_sources) if env.water_sources else ([], [])
+        trap_x, trap_y = zip(*env.traps) if env.traps else ([], [])
+        
+        plt.scatter(food_x, food_y, c='lime', marker='o', s=80, label='Food')
+        plt.scatter(water_x, water_y, c='deepskyblue', marker='o', s=80, label='Water')
+        plt.scatter(trap_x, trap_y, c='red', marker='x', s=80, label='Trap')
+        
+        plt.plot(trajectory[:, 0], trajectory[:, 1], 'b-', alpha=0.5, label='Trajectory')
         plt.scatter(trajectory[0, 0], trajectory[0, 1], c='g', label='Start')
         plt.scatter(trajectory[-1, 0], trajectory[-1, 1], c='r', label='End')
         plt.xlabel('X Position')
