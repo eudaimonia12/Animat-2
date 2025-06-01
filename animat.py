@@ -3,7 +3,10 @@ import random
 from config import *
 
 class Animat:
+    next_id = 1
     def __init__(self, genome=None, position=None):
+        self.id = Animat.next_id
+        Animat.next_id += 1
         self.position = position or (random.uniform(0, BASE_ENV_SIZE), random.uniform(0, BASE_ENV_SIZE))
         self.angle = random.uniform(0, 2 * np.pi)
         self.battery1 = BATTERY_MAX  # Food battery
@@ -15,17 +18,14 @@ class Animat:
         self.trajectory = [self.position]
         
         # Initialize sensor values
-        self.sensors = {
-            'food_left': 0, 'food_right': 0,
-            'water_left': 0, 'water_right': 0,
-            'trap_left': 0, 'trap_right': 0,
-            'other_left': 0, 'other_right': 0
-        }
+        self.sensors = {name: 0 for name in SENSOR_NAMES}
+
+        
     
     def update_sensors(self, env, other_animats=None):
         """Update sensor values based on environment and other animats"""
         sensor_range = BASE_SENSOR_RANGE * env.num_animats
-        
+        front_cone = np.deg2rad(30) # for robots with others
         # Update food sensors
         nearest_food, food_dist = env.get_nearest_object(self.position, 'food')
         if nearest_food:
@@ -69,23 +69,38 @@ class Animat:
                 self.sensors['trap_right'] = sensor_value * 1.2
         
         # Update other animat sensors
-        if other_animats:
-            for other in other_animats:
-                if other != self and other.alive:
-                    dist = np.sqrt((other.position[0] - self.position[0])**2 + 
-                                 (other.position[1] - self.position[1])**2)
-                    if dist < sensor_range:
-                        other_angle = np.arctan2(other.position[1] - self.position[1],
-                                               other.position[0] - self.position[0])
-                        relative_angle = (other_angle - self.angle) % (2 * np.pi)
-                        sensor_value = max(0, 100 * (1 - dist / sensor_range))
-                        
-                        if relative_angle < np.pi:
-                            self.sensors['other_left'] = max(self.sensors['other_left'], sensor_value * 1.2)
-                            self.sensors['other_right'] = max(self.sensors['other_right'], sensor_value)
-                        else:
-                            self.sensors['other_left'] = max(self.sensors['other_left'], sensor_value)
-                            self.sensors['other_right'] = max(self.sensors['other_right'], sensor_value * 1.2)
+        # if other_animats:
+        #     for other in other_animats:
+        #         if other != self and other.alive:
+        #             dist = np.sqrt((other.position[0] - self.position[0])**2 + 
+        #                          (other.position[1] - self.position[1])**2)
+        #             if dist < sensor_range:
+        #                 other_angle = np.arctan2(other.position[1] - self.position[1],
+        #                                        other.position[0] - self.position[0])
+        #                 relative_angle = (other_angle - self.angle) % (2 * np.pi)
+        #                 sensor_value = max(0, 100 * (1 - dist / sensor_range))
+        #                 #
+        #                 if relative_angle < np.pi:
+        #                     self.sensors['other_left'] = max(self.sensors['other_left'], sensor_value * 1.2)
+        #                     self.sensors['other_right'] = max(self.sensors['other_right'], sensor_value)
+        #                 else:
+        #                     self.sensors['other_left'] = max(self.sensors['other_left'], sensor_value)
+        #                     self.sensors['other_right'] = max(self.sensors['other_right'], sensor_value * 1.2)
+        # # print(f'Animat {self.id}')
+        nearest_other, other_dist = env.get_nearest_object(self.position, 'other')
+        if nearest_other:
+            other_angle = np.arctan2(nearest_other[1] - self.position[1], nearest_other[0] - self.position[0])
+            relative_angle = (other_angle - self.angle) % (2 * np.pi)
+            sensor_value = max(0, 100 * (1 - other_dist / sensor_range))
+            
+            if relative_angle < np.pi:
+                self.sensors['other_left'] = sensor_value * 1.2
+                self.sensors['other_right'] = sensor_value
+            else:
+                self.sensors['other_left'] = sensor_value
+                self.sensors['other_right'] = sensor_value * 1.2
+
+                                 
     
     def process_sensorimotor_links(self):
         """Process sensor inputs through the neural network to determine wheel speeds"""
@@ -93,7 +108,8 @@ class Animat:
         right_wheel_sum = 0
         
         # Process each sensor through its links
-        for i, (sensor_name, sensor_value) in enumerate(self.sensors.items()):
+        for i, sensor_name in enumerate(SENSOR_NAMES):
+            sensor_value = self.sensors[sensor_name] # fetching names from configs
             # Get the 9 parameters for this sensor's link
             start_idx = i * 9
             params = self.genome[start_idx:start_idx + 9]
@@ -101,10 +117,11 @@ class Animat:
             # Calculate the output based on the transfer function
             output = self._calculate_link_output(sensor_value, params)
             
+
             # Add to appropriate wheel sum
-            if i < 4:  # First 4 sensors go to left wheel
+            if i < 4 :  # First 4 sensors go to left wheel
                 left_wheel_sum += output
-            else:  # Last 4 sensors go to right wheel
+            else:  # rest go to right wheel
                 right_wheel_sum += output
         
         # Apply sigmoid function and scale to wheel speeds
@@ -148,7 +165,9 @@ class Animat:
     def _sigmoid(self, x, threshold):
         """Apply sigmoid function with threshold"""
         threshold = (threshold / 99.0) * 6 - 3  # Scale threshold to [-3, 3]
-        return 2.0 / (1.0 + np.exp(-(x - threshold))) - 1.0
+
+        # return 2.0 / (1.0 + np.exp(-(x - threshold))) - 1.0
+        return np.tanh( x - threshold)
     
     def update(self, env, other_animats=None):
         """Update animat state"""
@@ -202,15 +221,30 @@ class Animat:
             collided, pos = env.check_collision(self.position, obj_type)
             if collided:
                 if obj_type == 'trap':
-                    self.alive = False
                     self.battery1 = 0
                     self.battery2 = 0
+                    self.alive = False
                 elif obj_type == 'food':
                     self.battery1 = BATTERY_MAX
                     env.replace_object('food', pos)
                 elif obj_type == 'water':
                     self.battery2 = BATTERY_MAX
                     env.replace_object('water', pos)
+        
+        # process other animate collision
+        if other_animats:
+            for other in other_animats:
+                if other is self or not other.alive:
+                    continue
+                dist = np.hypot(
+                    other.position[0] - self.position[0]
+                    ,other.position[1] - self.position[1]
+                )
+                if dist < (ANIMAT_SIZE * 2):
+                    self.battery1 - COLLISION_DAMAGE
+                    self.battery2 - COLLISION_DAMAGE
+                
+
     
     def get_fitness(self):
         """Calculate fitness based on average battery levels"""

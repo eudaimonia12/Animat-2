@@ -10,6 +10,7 @@ class Visualizer:
         pygame.display.set_caption(WINDOW_TITLE)
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 36)
+        
     
     def draw_environment(self, env, animats):
         """Draw the environment and all objects"""
@@ -34,7 +35,7 @@ class Visualizer:
         for animat in animats:
             if animat.alive:
                 # Draw animat body
-                pygame.draw.circle(self.screen, COLORS['WHITE'], 
+                pygame.draw.circle(self.screen, COLORS['CYAN'], 
                                  (int(animat.position[0]), int(animat.position[1])), 
                                  ANIMAT_SIZE)
                 
@@ -63,7 +64,7 @@ class Visualizer:
                                (x, y, battery_width * (animat.battery2/BATTERY_MAX), battery_height))
                 pygame.draw.rect(self.screen, COLORS['WHITE'],
                                (x, y, battery_width, battery_height), 1)
-        
+        self.screen.fill(COLORS['WHITE'])
         pygame.display.flip()
         self.clock.tick(FPS)
     
