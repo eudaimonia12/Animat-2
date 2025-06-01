@@ -14,14 +14,16 @@ class Environment:
         self.food_sources = []
         self.water_sources = []
         self.traps = []
+        
         self.reset_objects()
-    
+        self.other = []
+
     def reset_objects(self):
         """Reset all objects to random positions"""
         self.food_sources = self._generate_objects(self.food_count)
         self.water_sources = self._generate_objects(self.water_count)
         self.traps = self._generate_objects(self.trap_count)
-    
+        
     def _generate_objects(self, count):
         """Generate random positions for objects"""
         objects = []
@@ -42,22 +44,55 @@ class Environment:
             self.water_sources.append(new_pos)
     
     def get_nearest_object(self, position, object_type):
-        """Get the nearest object of specified type and its distance"""
-        if object_type == 'food':
-            objects = self.food_sources
-        elif object_type == 'water':
-            objects = self.water_sources
-        elif object_type == 'trap':
-            objects = self.traps
-        else:
-            return None, float('inf')
+                """
+                Get the nearest object of specified type and its distance.
+                """
+                px, py = position
+
+                if object_type == 'food':
+                    pool = self.food_sources
+
+                elif object_type == 'water':
+                    pool = self.water_sources
+
+                elif object_type == 'trap':
+                    pool = self.traps
+
+                elif object_type == 'other':
+                    # pool 不是坐标 tuple 列表，而是 Animat 实例列表
+                    nearest_pos = None
+                    min_dist = float('inf')
+                    for animat in self.other:
+                        
+                        if not animat.alive:
+                            continue
+                        ox, oy = animat.position
+                        dx, dy = ox - px, oy - py
+                        d = np.hypot(dx, dy)
+                        
+                        if 0 < d < min_dist:
+                            min_dist = d
+                            nearest_pos = (ox, oy)
+                    if nearest_pos is None:
+                        return None, float('inf')
+                    return nearest_pos, min_dist
+
+                else:
+                    return None, float('inf')
+
+                
+                if not pool:
+                    return None, float('inf')
+                nearest_pos = None
+                min_dist = float('inf')
+                for (ox, oy) in pool:
+                    dx, dy = ox - px, oy - py
+                    d = np.hypot(dx, dy)
+                    if d < min_dist:
+                        min_dist = d
+                        nearest_pos = (ox, oy)
+                return nearest_pos, min_dist
         
-        if not objects:
-            return None, float('inf')
-        
-        distances = [np.sqrt((x - position[0])**2 + (y - position[1])**2) for x, y in objects]
-        min_idx = np.argmin(distances)
-        return objects[min_idx], distances[min_idx]
     
     def check_collision(self, position, object_type):
         """Check if animat collides with any object of specified type"""
@@ -67,16 +102,22 @@ class Environment:
             objects = self.water_sources
         elif object_type == 'trap':
             objects = self.traps
+        elif object_type == 'other':
+            objects = 'other'
         else:
             return False, None
         
         for obj_pos in objects:
-            distance = np.sqrt((obj_pos[0] - position[0])**2 + (obj_pos[1] - position[1])**2)
-            if distance < SOURCE_SIZE + ANIMAT_SIZE:
+
+            # distance = np.sqrt((obj_pos[0] - position[0])**2 + (obj_pos[1] - position[1])**2)
+            manhatton_dis = np.sum(np.abs(position[0] - position[1]))
+            if manhatton_dis < SOURCE_SIZE + ANIMAT_SIZE:
                 return True, obj_pos
         return False, None
     
     def check_animat_collision(self, position1, position2):
         """Check if two animats collide"""
-        distance = np.sqrt((position1[0] - position2[0])**2 + (position1[1] - position2[1])**2)
-        return distance < ANIMAT_SIZE * 2 
+        dx = position1[0] - position2[0]
+        dy = position1[1] - position2[1]
+        distance = (dx*dx + dy*dy) ** 0.5
+        return distance < (ANIMAT_SIZE * 2) 

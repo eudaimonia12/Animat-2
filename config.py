@@ -18,8 +18,8 @@ STUCK_THRESHOLD = 30  # Time steps before random movement
 COLLISION_DAMAGE = 10  # Battery damage when animats collide
 
 # Simulation speed control
-SIMULATION_SPEED = 1  # Speed multiplier
-BASE_FPS = 60
+SIMULATION_SPEED = 100  # Speed multiplier
+BASE_FPS = 800
 FPS = BASE_FPS * SIMULATION_SPEED  # Adjusted FPS for faster simulation
 FRAME_SKIP = 1  # Number of frames to skip in visualization
 
@@ -27,7 +27,13 @@ FRAME_SKIP = 1  # Number of frames to skip in visualization
 POPULATION_SIZE = 100
 CROSSOVER_RATE = 0.5
 MUTATION_RATE = 0.01
-GENOME_LENGTH = 83  # 9 links * 9 parameters + 2 sigmoid thresholds
+SENSOR_NAMES = ['food_left',   'food_right',
+    'water_left',  'water_right',
+    'trap_left',   'trap_right',
+    'other_left',  'other_right'
+    ]
+
+GENOME_LENGTH = len(SENSOR_NAMES) * 9 +2# 83  # 9 links * 9 parameters + 2 sigmoid thresholds
 
 # Visualization constants
 WINDOW_TITLE = "Animat Simulation"

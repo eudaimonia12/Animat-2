@@ -17,10 +17,23 @@ def get_num_animats():
         except ValueError:
             print("Please enter a valid number")
 
+    
+
 def main():
+    
     # Get number of animats
     num_animats = get_num_animats()
-    
+    try:
+        speed_input = int(input("Enter simulation speed multiplier (1 = normal speed): "))
+        if speed_input > 0:
+            global SIMULATION_SPEED
+            SIMULATION_SPEED = speed_input
+            global FPS
+            FPS = BASE_FPS * SIMULATION_SPEED
+        else:
+             print("Invalid speed, using default SIMULATION_SPEED =", SIMULATION_SPEED)
+    except Exception:
+        print("Invalid speed, using default SIMULATION_SPEED =", SIMULATION_SPEED)
     # Initialize environment and genetic algorithm
     env = Environment(num_animats)
     ga = GeneticAlgorithm()
@@ -32,7 +45,7 @@ def main():
     # Main simulation loop
     running = True
     generation = 0
-    max_generations = 200
+    max_generations = 50
     
     while running and generation < max_generations:
         # Handle events
@@ -81,7 +94,6 @@ def main():
             # Draw environment only every FRAME_SKIP frames
             # if step % FRAME_SKIP == 0:
             visualizer.draw_environment(env, animats)
-        
         generation += 1
     
     # Plot final statistics
