@@ -179,7 +179,7 @@ class Animat:
         
         # Check if stuck, if stuck, turn randomly
         if np.sqrt((self.position[0] - self.last_position[0])**2 + 
-                  (self.position[1] - self.last_position[1])**2) < 1:
+                  (self.position[1] - self.last_position[1])**2) < 0.1:
             self.stuck_counter += 1
             if self.stuck_counter > STUCK_THRESHOLD:
                 self.angle = random.uniform(0, 2 * np.pi)
